@@ -1,0 +1,42 @@
+# edge — общий реверс-прокси для всех проектов на сервере.
+# Владеет портами 80/443 и TLS. Ни от одного приложения НЕ зависит:
+# приложения сами подключаются к общей внешней сети "web" и регистрируют
+# себя под стабильными alias'ами, а здесь только маршрутизация по доменам.
+#
+# Перед первым запуском создать общую сеть (один раз на сервер):
+#   docker network create web
+#
+# Запуск:
+#   docker compose -p edge up -d
+
+services:
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      # Реальный домен берётся из edge/.env (в git не попадает).
+      BASE_DOMAIN: ${BASE_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data      # сюда Caddy складывает выпущенные сертификаты
+      - caddy_config:/config
+    networks:
+      - web
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  # Общая сеть, созданная вручную (docker network create web).
+  # external: true — edge НЕ владеет ею, лишь подключается.
+  web:
+    external: true
+
+volumes:
+  caddy_data: {}
+  caddy_config: {}
