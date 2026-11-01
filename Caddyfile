@@ -9,9 +9,14 @@
 # Приложения НЕ знают друг о друге — вся маршрутизация только тут.
 
 # === chatkeeper ===
-# Go-сервер отдаёт и веб-панель, и API на :8080 — проксируем целиком.
+# /webhook* уходит на порт бота (:8081), а остальное (панель и API) — на :8080.
 chatkeeper.{$BASE_DOMAIN} {
-	reverse_proxy chatkeeper:8080
+	handle /webhook* {
+		reverse_proxy chatkeeper:8081
+	}
+	handle {
+		reverse_proxy chatkeeper:8080
+	}
 }
 
 # === secure-ask: webhook-бот ===
